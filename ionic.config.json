@@ -1,0 +1,7 @@
+{
+  "name": "auth0-example",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "custom"
+}
