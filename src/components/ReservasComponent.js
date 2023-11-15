@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Alert } from "react-bootstrap";
 import "../App.css"; // Asegúrate de tener estilos CSS adecuados importados
+import GeneraReservaComponent from "./GeneraReservaComponent";
 
 const API_URL = 'http://localhost:3002/api/getAllReservasProximosDias/3';
 const INSERT_API_URL = 'http://localhost:3002/api/insert-Reserva';
@@ -34,21 +35,22 @@ function formatData(reservas) {
       dates[fecha][canchaId] = {};
     }
 
-    if (typeof dates[fecha][canchaId][bloque] ==='undefined') {
-      dates[fecha][canchaId][bloque] = {
-        nombre_reserva: nombreReserva ?? 'disponible',
-        fecha_reserva: fecha,
-        bloque: bloque,
-        telefono_contacto: reserva.fono ?? 'No disponible',
-        username: username ?? 'No disponible',
-        fecha_hora_creacion: reserva.fecha_hora_creacion ?? 'No disponible',
-        id: reserva.reserva_id,
-      };
-    }
+    dates[fecha][canchaId][bloque] = {
+      nombre_reserva: nombreReserva ?? 'disponible',
+      fecha_reserva: fecha,
+      bloque: bloque,
+      telefono_contacto: reserva.fono ?? 'No disponible',
+      username: username ?? 'No disponible',
+      fecha_hora_creacion: reserva.fecha_hora_creacion ?? 'No disponible',
+      id: reserva.reserva_id,
+      // Agregamos una nueva propiedad para marcar si la reserva está activa o no.
+      reservado: reserva.reserva_id !== null
+    };
   });
 
   return dates;
 }
+
 
 function formatTime(bloque) {
   const hour = bloque + 16;
@@ -109,7 +111,7 @@ function ReservasComponent() {
 
   const handleReservaSubmit = () => {
     const nuevaReserva = {
-      usuario_id: 1,
+      usuario_id: reservaDetails.usuario_id,
       cancha_id: reservaDetails.cancha_id,
       nombre_reserva: reservaDetails.nombre_reserva,
       fecha_reserva: reservaDetails.fecha,
@@ -176,10 +178,13 @@ function ReservasComponent() {
                 {Array.from({ length: 8 }, (_, i) => {
                   const bloque = i;
                   const reserva = datesData[fecha][canchaId][bloque + 16];
-                  const content = reserva
+                  const content = reserva && reserva.nombre_reserva !== "disponible"
                     ? `Reserva a nombre de ${reserva.nombre_reserva}`
                     : "disponible";
-                  const blockClass = reserva ? "reservado" : "disponible";
+
+                  const blockClass = reserva && reserva.nombre_reserva !== "disponible"
+                    ? "reservado"
+                    : "disponible";
 
                   return (
                     <div
@@ -187,7 +192,9 @@ function ReservasComponent() {
                       className={`bloque ${blockClass}`}
                       onClick={() => {
                         setSelectedBlock(bloque);
-                        if (!reserva) {
+                        console.log("reserva.nombre_reserva: "+reserva.nombre_reserva)
+                        if(reserva.nombre_reserva === "disponible") {
+                          console.log("esta disponible ")
                           openReservaForm(fecha, canchaId);
                         } else {
                           openModal(reserva, canchaId);
@@ -233,7 +240,14 @@ function ReservasComponent() {
         </Modal.Footer>
       </Modal>
 
-      {/* Resto del código (GeneraReservaComponent) permanece sin cambios */}
+      <GeneraReservaComponent
+        showModal={showReservaForm}
+        handleClose={closeReservaForm}
+        handleReservaSubmit={handleReservaSubmit}
+        handleReservaFormChange={handleReservaFormChange}
+        reservaDetails={reservaDetails}
+        bloqueReserva={formatTime(selectedBlock)}
+      />
     </div>
   );
 }
