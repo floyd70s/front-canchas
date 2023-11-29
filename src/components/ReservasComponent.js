@@ -84,15 +84,11 @@ function ReservasComponent() {
   }, [user, isAuthenticated]);
 
   const obtenerPermisosDeAnulacion = (username) => {
-    console.log("=== obtenerPermisosDeAnulacion ===");
-    console.log("username:" + username);
-    console.log("API_URLS.getUser:" + API_URLS.getUser);
     const url = `${API_URLS.getUser}/${encodeURIComponent(username)}`; // Modificación aquí
 
     axios.get(url)
       .then((response) => {
         const data = response.data[0]; // Asumiendo que la respuesta es un array con un solo objeto.
-        console.log("response:", response.data);
         setPuedeAnular(data.puedeanular === 1);
         setUsuarioId(data.usuario_id);
       })
@@ -107,7 +103,6 @@ function ReservasComponent() {
       username: username,
       dias: dias
     };
-    console.log("API_URLS.getAllReservasProximosDias:" + API_URLS.getAllReservasProximosDias)
     axios.post(API_URLS.getAllReservasProximosDias, params)
       .then((response) => {
         setReservas(response.data);
@@ -123,7 +118,6 @@ function ReservasComponent() {
 
   const openModal = (content, canchaId) => {
     setModalContent(content);
-    console.log("🚀 content:", content)
     setShowModal(true);
     if (canchaId) {
       setModalContent({ ...content, cancha_id: canchaId });
@@ -200,13 +194,6 @@ function ReservasComponent() {
   };
 
   const handleDeleteReserva = (reserva) => {
-    console.log("=== handleDeleteReserva ===")
-    console.log("🚀 reserva:", reserva)
-    console.log("puedeAnular reservas de otros usuarios: " + puedeAnular)
-    console.log("🚀 user.email:", user.email)
-    console.log("🚀  modalContent:", modalContent)
-    console.log("🚀 ~ file: ReservasComponent.js:214 ~ handleDeleteReserva ~ modalContent.username:", modalContent.username)
-    console.log("======================================")
     if (puedeAnular) {
       axios.post(API_URLS.deleteBloqueReserva, { reservaId: modalContent.id })
         .then((response) => {
@@ -223,7 +210,6 @@ function ReservasComponent() {
         });
     } else {
       if (user.email === modalContent.username) {
-        console.log("🚀 ~ file: ReservasComponent.js:239 ~ handleDeleteReserva ~ reserva.id:", reserva.id)
         axios.post(API_URLS.deleteBloqueReserva, { reservaId: modalContent.id })
           .then((response) => {
             loadReservas(user.email, 7); // o el intervalo de días que prefieras
