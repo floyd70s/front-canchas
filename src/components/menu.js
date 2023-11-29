@@ -15,11 +15,9 @@ function Menu() {
             <div className="menu">
                 <div className="menu-left">
                     <div className="initial-screen">
-                        <h1>Sistema de Reserva de Canchas</h1>
+                        <h1>Sistema de Reservas</h1>
                         {isAuthenticated ? (
                             <>
-                                <p>Reservar Cancha</p>
-                                <p>Ver Reportes</p>
                             </>
                         ) : null}
                     </div>

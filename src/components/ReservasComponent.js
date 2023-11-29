@@ -1,13 +1,13 @@
+import { useAuth0 } from "@auth0/auth0-react";
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Alert } from "react-bootstrap";
 import "../App.css"; // Asegúrate de tener estilos CSS adecuados importados
 import GeneraReservaComponent from "./GeneraReservaComponent";
+import { API_URLS } from "../app_config";
 
-const API_URL = 'http://localhost:3002/api/getAllReservasProximosDias/3';
-const INSERT_API_URL = 'http://localhost:3002/api/insert-Reserva';
-const DELETE_API_URL = 'http://localhost:3002/api/delete-bloque-reserva';
 
 function formatDate(fecha) {
   const date = new Date(fecha);
@@ -16,7 +16,6 @@ function formatDate(fecha) {
   const day = `${date.getDate()}`.padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-
 function formatData(reservas) {
   const dates = {};
 
@@ -50,8 +49,6 @@ function formatData(reservas) {
 
   return dates;
 }
-
-
 function formatTime(bloque) {
   const hour = bloque + 16;
   return `${hour}:00`;
@@ -71,14 +68,47 @@ function ReservasComponent() {
   });
   const [showReservaForm, setShowReservaForm] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const { user, isAuthenticated } = useAuth0();
+  const [puedeAnular, setPuedeAnular] = useState(false);
+  const [showAlert, setShowAlert] = useState({ visible: false, mensaje: "", variant: "success" });
+  const [usuarioId, setUsuarioId] = useState(null);
+
+
+
 
   useEffect(() => {
-    loadReservas();
-  }, []);
+    if (isAuthenticated && user?.email) {
+      loadReservas(user.email, 7); // 7 días por defecto
+      obtenerPermisosDeAnulacion(user.email);
+    }
+  }, [user, isAuthenticated]);
 
-  const loadReservas = () => {
-    axios
-      .get(API_URL)
+  const obtenerPermisosDeAnulacion = (username) => {
+    console.log("=== obtenerPermisosDeAnulacion ===");
+    console.log("username:" + username);
+    console.log("API_URLS.getUser:" + API_URLS.getUser);
+    const url = `${API_URLS.getUser}/${encodeURIComponent(username)}`; // Modificación aquí
+
+    axios.get(url)
+      .then((response) => {
+        const data = response.data[0]; // Asumiendo que la respuesta es un array con un solo objeto.
+        console.log("response:", response.data);
+        setPuedeAnular(data.puedeanular === 1);
+        setUsuarioId(data.usuario_id);
+      })
+      .catch((error) => {
+        console.error("Error al obtener permisos de anulación", error);
+      });
+  };
+
+
+  const loadReservas = (username, dias) => {
+    const params = {
+      username: username,
+      dias: dias
+    };
+    console.log("API_URLS.getAllReservasProximosDias:" + API_URLS.getAllReservasProximosDias)
+    axios.post(API_URLS.getAllReservasProximosDias, params)
       .then((response) => {
         setReservas(response.data);
         const formattedData = formatData(response.data);
@@ -86,11 +116,14 @@ function ReservasComponent() {
       })
       .catch((error) => {
         console.error("Error al obtener las reservas", error);
+        setShowAlert({ visible: true, mensaje: "Error al obtener las reservas", variant: "warning" });
+        setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
       });
   };
 
   const openModal = (content, canchaId) => {
     setModalContent(content);
+    console.log("🚀 content:", content)
     setShowModal(true);
     if (canchaId) {
       setModalContent({ ...content, cancha_id: canchaId });
@@ -111,7 +144,7 @@ function ReservasComponent() {
 
   const handleReservaSubmit = () => {
     const nuevaReserva = {
-      usuario_id: reservaDetails.usuario_id,
+      usuario_id: usuarioId,
       cancha_id: reservaDetails.cancha_id,
       nombre_reserva: reservaDetails.nombre_reserva,
       fecha_reserva: reservaDetails.fecha,
@@ -120,16 +153,18 @@ function ReservasComponent() {
     };
 
     axios
-      .post(INSERT_API_URL, nuevaReserva)
+      .post(API_URLS.insertReserva, nuevaReserva)
       .then((response) => {
-        console.log(response.data);
-        loadReservas();
+        loadReservas(user.email, 7);
         setShowReservaForm(false);
-        setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 3000);
+        setShowAlert({ visible: true, mensaje: "Reserva ingresada con exito", variant: "success" });
+        setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
+
       })
       .catch((error) => {
         console.error("Error al insertar la reserva", error);
+        setShowAlert({ visible: true, mensaje: "Error al insertar la reserva", variant: "warning" });
+        setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
       });
   };
 
@@ -146,9 +181,12 @@ function ReservasComponent() {
     setShowReservaForm(false);
   };
 
-  const handleDeleteReserva = (reservaId) => {
+  const OLDhandleDeleteReserva = (reservaId) => {
+    console.log("=== handleDeleteReserva ===")
+
     const dataReserva = { reservaId: reservaId };
-    const payload = DELETE_API_URL + "/" + reservaId;
+    const payload = API_URLS.deleteBloqueReserva
+
     axios
       .post(payload, dataReserva)
       .then((response) => {
@@ -161,19 +199,70 @@ function ReservasComponent() {
       });
   };
 
+  const handleDeleteReserva = (reserva) => {
+    console.log("=== handleDeleteReserva ===")
+    console.log("🚀 reserva:", reserva)
+    console.log("puedeAnular reservas de otros usuarios: " + puedeAnular)
+    console.log("🚀 user.email:", user.email)
+    console.log("🚀  modalContent:", modalContent)
+    console.log("🚀 ~ file: ReservasComponent.js:214 ~ handleDeleteReserva ~ modalContent.username:", modalContent.username)
+    console.log("======================================")
+    if (puedeAnular) {
+      axios.post(API_URLS.deleteBloqueReserva, { reservaId: modalContent.id })
+        .then((response) => {
+          loadReservas(user.email, 7); // o el intervalo de días que prefieras
+          closeModal();
+          setShowAlert({ visible: true, mensaje: "Reserva eliminada con exito", variant: "success" });
+          setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
+        })
+        .catch((error) => {
+          console.error("Error al anular la reserva", error);
+          closeModal();
+          setShowAlert({ visible: true, mensaje: "Error al anular la reserva", variant: "danger" });
+          setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
+        });
+    } else {
+      if (user.email === modalContent.username) {
+        console.log("🚀 ~ file: ReservasComponent.js:239 ~ handleDeleteReserva ~ reserva.id:", reserva.id)
+        axios.post(API_URLS.deleteBloqueReserva, { reservaId: modalContent.id })
+          .then((response) => {
+            loadReservas(user.email, 7); // o el intervalo de días que prefieras
+            closeModal();
+            setShowAlert({ visible: true, mensaje: "Reserva eliminada con exito", variant: "success" });
+            setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
+          })
+          .catch((error) => {
+            console.error("Error al anular la reserva", error);
+            closeModal();
+            setShowAlert({ visible: true, mensaje: "Error al anular la reserva", variant: "danger" });
+            setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
+          });
+      }
+      else {
+        closeModal();
+        setShowAlert({ visible: true, mensaje: "No posee los permisos necesarios para eliminar reservas de otros usuarios.", variant: "warning" });
+        setTimeout(() => setShowAlert({ visible: false, mensaje: "", variant: "success" }), 3000);
+      }
+    }
+  };
+
+
   return (
     <div>
-      {showSuccessAlert && (
-        <Alert variant="success">
-          Reserva realizada con éxito.
+      <div className="contenedor-relativo">
+        <h2 className="apple-style-h2">Reservas de Complejo Deportivo La Giocata</h2>
+      </div>
+      {showAlert.visible && (
+        <Alert variant={showAlert.variant}>
+          {showAlert.mensaje}
         </Alert>
       )}
       {Object.keys(datesData).map((fecha) => (
         <div key={fecha} className="fecha">
-          <h2>Fecha: {fecha}</h2>
+          <h2 className="apple-style-h2">Fecha: {fecha}</h2>
           {Object.keys(datesData[fecha]).map((canchaId) => (
             <div key={canchaId} className="cancha">
-              <h3>Cancha Nº {canchaId}</h3>
+              <h3 className="apple-style-h3">Cancha Nº {canchaId}</h3>
               <div className="bloque-row">
                 {Array.from({ length: 8 }, (_, i) => {
                   const bloque = i;
@@ -192,8 +281,8 @@ function ReservasComponent() {
                       className={`bloque ${blockClass}`}
                       onClick={() => {
                         setSelectedBlock(bloque);
-                        console.log("reserva.nombre_reserva: "+reserva.nombre_reserva)
-                        if(reserva.nombre_reserva === "disponible") {
+                        console.log("reserva.nombre_reserva: " + reserva.nombre_reserva)
+                        if (reserva.nombre_reserva === "disponible") {
                           console.log("esta disponible ")
                           openReservaForm(fecha, canchaId);
                         } else {
