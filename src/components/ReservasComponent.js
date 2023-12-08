@@ -245,7 +245,7 @@ function ReservasComponent() {
       )}
       {Object.keys(datesData).map((fecha) => (
         <div key={fecha} className="fecha">
-          <h2 className="apple-style-h2">Fecha: {fecha}</h2>
+          <h2 className="detalle-fecha">{fecha}</h2>
           {Object.keys(datesData[fecha]).map((canchaId) => (
             <div key={canchaId} className="cancha">
               <h3 className="apple-style-h3">Cancha Nº {canchaId}</h3>

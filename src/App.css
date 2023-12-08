@@ -223,3 +223,13 @@
   padding: 1px 0; /* Algo de padding para dar espacio alrededor */
   margin: 0px 0; /* Margen para separar del resto de contenido */
 }
+.detalle-fecha {
+  font-family: 'Helvetica Neue', sans-serif; /* Fuente característica de Apple */
+  font-weight: 300; /* Texto ligero */
+  font-weight: bold;
+  color: #454040; /* Color oscuro para el texto */
+  letter-spacing: 0.px; /* Espaciado entre letras para una apariencia más refinada */
+  text-align: center; /* Centrar el texto */
+  padding: 1px 0; /* Algo de padding para dar espacio alrededor */
+  margin: 0px 0; /* Margen para separar del resto de contenido */
+}
