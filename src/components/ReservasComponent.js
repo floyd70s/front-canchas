@@ -8,24 +8,34 @@ import "../App.css"; // Asegúrate de tener estilos CSS adecuados importados
 import GeneraReservaComponent from "./GeneraReservaComponent";
 import { API_URLS } from "../app_config";
 
+function formatDate(fechaISO) {
+  const date = new Date(fechaISO);
+  const year = date.getUTCFullYear(); // Obtener el año en formato UTC
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0'); // Obtener el mes en formato UTC y ajustar a 2 dígitos
+  const day = `${date.getUTCDate()}`.padStart(2, '0'); // Obtener el día en formato UTC y ajustar a 2 dígitos
 
-function formatDate(fecha) {
-  const date = new Date(fecha);
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
 function formatData(reservas) {
   const dates = {};
 
   reservas.forEach((reserva) => {
+    
     const fecha = formatDate(reserva.fecha);
     const canchaId = reserva.cancha_id;
     const bloque = reserva.bloque;
     const nombreReserva = reserva.nombre_reserva;
     const username = reserva.nombre_usuario;
-
+    
+    // console.log('==============formatData===================')
+    // console.log("🚀 reserva.fecha:", reserva.fecha)
+    // console.log("🚀 username:", username)
+    // console.log("🚀 nombreReserva:", nombreReserva)
+    // console.log("🚀 bloque:", bloque)
+    // console.log("🚀 canchaId:", canchaId)
+    // console.log("🚀 fecha:", fecha)
+    
     if (!dates[fecha]) {
       dates[fecha] = {};
     }
@@ -63,7 +73,7 @@ function ReservasComponent() {
   const [reservaDetails, setReservaDetails] = useState({
     nombre_reserva: "",
     telefono_contacto: "",
-    fecha: formatDate(new Date()),
+    fecha: formatDate(new Date('1900-01-01')),
     cancha_id: "",
   });
   const [showReservaForm, setShowReservaForm] = useState(false);
