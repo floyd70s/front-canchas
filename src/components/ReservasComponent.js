@@ -28,14 +28,7 @@ function formatData(reservas) {
     const nombreReserva = reserva.nombre_reserva;
     const username = reserva.nombre_usuario;
     
-    // console.log('==============formatData===================')
-    // console.log("🚀 reserva.fecha:", reserva.fecha)
-    // console.log("🚀 username:", username)
-    // console.log("🚀 nombreReserva:", nombreReserva)
-    // console.log("🚀 bloque:", bloque)
-    // console.log("🚀 canchaId:", canchaId)
-    // console.log("🚀 fecha:", fecha)
-    
+   
     if (!dates[fecha]) {
       dates[fecha] = {};
     }
